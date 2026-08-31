@@ -1,0 +1,368 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\captionsetup{font=small}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Project Report}
+\rhead{Numerical Study of Inflationary Cosmology}
+\rfoot{\thepage}
+\setlength{\headheight}{14pt}
+
+\title{Numerical Study of Inflationary Cosmology:\\
+\large Scalar and Tensor Perturbation Spectra Across Single-Field Potentials}
+\author{Rishi Ramachandran}
+\date{Project Report}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This project developed a numerical framework for evolving single-field inflationary
+backgrounds and both scalar and tensor perturbations, in order to compute the primordial
+curvature and gravitational-wave power spectra for a range of inflationary potentials.
+Starting from the Mukhanov--Sasaki formalism, the framework evolves the background in
+e-fold time, initializes perturbations deep inside the Hubble radius with Bunch--Davies
+initial conditions, follows them into the super-Hubble regime, and extracts the frozen
+scalar and tensor power spectra. The framework was validated on quadratic inflation
+against slow-roll analytic expectations, then extended to seven further potentials
+(quartic, hilltop, Starobinsky, natural, symmetry-breaking, a quadratic+quartic mixture,
+and the T-model $\alpha$-attractor), all calibrated to a shared benchmark of
+$N_{\rm end}=65$ e-folds and pivot amplitude $\mathcal{P}_\mathcal{R}(k_*)=2.05\times10^{-9}$.
+Systematic parameter sweeps across each potential family were used to explore how the
+predicted $(n_s,r)$ pair moves as a function of the potential's free parameters, revealing
+a classification of parameters into \emph{scale-type} (rescaling $\phi$ at fixed potential
+shape) and \emph{shape-type} (changing the functional form itself). This classification,
+and the resulting exponential- versus linear-track behaviour it produces, was observed and
+numerically verified across seven independent sweeps, and is flagged here as a pattern
+worth further analytic and observational investigation.
+\end{abstract}
+
+\section{Introduction}
+Inflation explains the horizon and flatness problems through a period of accelerated
+expansion, and predicts a nearly scale-invariant spectrum of scalar curvature perturbations
+together with a spectrum of tensor perturbations (primordial gravitational waves). Both are
+computed by evolving the homogeneous inflaton background and the linear perturbations
+around it, using the Mukhanov--Sasaki equation.
+
+This project began as a single-potential numerical implementation of that pipeline
+(quadratic inflation, validated against slow-roll expectations) and has since been
+extended substantially: to seven additional potentials, to the tensor sector and the
+tensor-to-scalar ratio $r$, and to systematic parameter sweeps within each potential
+family. The unifying design principle throughout is that the potential $V(\phi)$ is
+supplied to a fixed background/perturbation solver, so that extending to a new model is a
+local change (new $V,V_{,\phi}$) rather than a rewrite of the numerics. All theoretical
+background used here follows Baumann's \emph{Cosmology} lecture notes~\cite{baumann},
+equation numbers below are given for the
+project's own numbering, with the corresponding Baumann equation noted where directly
+quoted.
+
+\section{Theoretical Framework}
+
+\subsection{Background dynamics}
+For a homogeneous inflaton in a flat FRW background, working in e-fold time
+$N\equiv\ln a$ and reduced Planck units, the Friedmann constraint and Klein--Gordon
+equation become
+\begin{equation}
+H^2=\frac{V(\phi)}{3-\tfrac12\phi_N^2},\qquad
+\phi_{NN}=-\Big(3-\tfrac12\phi_N^2\Big)\phi_N-\Big(6-\phi_N^2\Big)\frac{V_{,\phi}}{2V},
+\label{eq:bg}
+\end{equation}
+with $\phi_N\equiv d\phi/dN$ [Baumann eqs.\ (2.3.24), (2.3.27), recast in $N$-time].
+The first Hubble slow-roll parameter is $\varepsilon_1=\tfrac12\phi_N^2$, and inflation
+ends when $\varepsilon_1=1$ ($\phi_N=\sqrt2$); this is the numerical stopping event used
+throughout. The potential slow-roll parameters, evaluated directly from $V(\phi)$, are
+\begin{equation}
+\varepsilon_v(\phi)=\tfrac12\big(V_{,\phi}/V\big)^2,\qquad
+\eta_v(\phi)=V_{,\phi\phi}/V,
+\label{eq:sr}
+\end{equation}
+[Baumann eq.\ (2.3.37)], used below as the analytic slow-roll cross-check on every
+numerical result.
+
+\subsection{Scalar and tensor perturbations}
+The gauge-invariant comoving curvature perturbation $\mathcal{R}_k$ obeys the
+Mukhanov--Sasaki equation, which in $e$-fold time and with $z\equiv a\phi_N$ reads
+\begin{equation}
+\mathcal{R}_{k,NN}+\Big[1-\tfrac12\phi_N^2+2\frac{z_N}{z}\Big]\mathcal{R}_{k,N}
++\Big(\frac{k}{aH}\Big)^2\mathcal{R}_k=0,
+\label{eq:ms-scalar}
+\end{equation}
+[Baumann eq.\ (6.1.9), $z$-form]. Tensor perturbations $h_k$ (per polarization) obey the
+same equation with $z\to a$ and no $\phi_N$-dependent friction term beyond the standard
+$3H$ Hubble drag. Both are complex, split into real/imaginary parts, and initialized deep
+inside the horizon ($k/aH\simeq100$) with Bunch--Davies vacuum initial conditions
+[Baumann eq.\ (6.3.41)], then integrated to $k/aH\simeq10^{-5}$, well outside the horizon,
+where both $\mathcal{R}_k$ and $h_k$ freeze to constants. The dimensionless power spectra
+are then
+\begin{equation}
+\mathcal{P}_\mathcal{R}(k)=\frac{k^3}{2\pi^2}|\mathcal{R}_k|^2,\qquad
+\mathcal{P}_h(k)=8\,\frac{k^3}{2\pi^2}|h_k|^2,\qquad
+r(k)\equiv\frac{\mathcal{P}_h(k)}{\mathcal{P}_\mathcal{R}(k)},
+\label{eq:spectra}
+\end{equation}
+with the tensor prefactor of 8 (two polarizations, and normalization of $h_k$ to the
+physical metric perturbation) calibrated against the slow-roll result $r=16\varepsilon_v$
+[Baumann eq.\ (6.5.65)]. The scalar spectral index is extracted numerically as the local
+log-slope $n_s-1\equiv d\ln\mathcal{P}_\mathcal{R}/d\ln k$ near the pivot, and compared to
+the analytic slow-roll formula $n_s-1=-6\varepsilon_v+2\eta_v$ [Baumann eq.\ (6.4.57)]
+evaluated at the field value $N_*=50$ e-folds before the end of inflation. The tensor
+spectral index $n_t\equiv d\ln\mathcal{P}_h/d\ln k$ is extracted the same way, and used
+below to test the standard single-field consistency relation $r=-8n_t$.
+
+\section{Numerical Framework and Shared Benchmark}
+Every potential in this project is evolved through the same pipeline: (1) specify
+$V,V_{,\phi}$; (2) root-find the initial field value $\phi_i$ on the \emph{exact}
+background ODE~\eqref{eq:bg} (not the slow-roll estimate) so that inflation ends at
+exactly $N_{\rm end}=65$; (3) tune the potential's overall scale so the pivot-scale
+amplitude matches $\mathcal{P}_\mathcal{R}(k_*)=2.05\times10^{-9}$ at $k_*=0.05\,{\rm
+Mpc^{-1}}$; (4) locate the sub-Hubble ($k/aH=100$, i.e.\ \texttt{Nic\_cond=100}) and
+super-Hubble ($k/aH=10^{-5}$) boundaries for each mode; (5) integrate
+Eq.~\eqref{eq:ms-scalar} (and its tensor counterpart) with absolute tolerance
+$\texttt{atol}=10^{-13}$; (6) evaluate the frozen spectra via Eq.~\eqref{eq:spectra}.
+$N_*=50$ (the pivot mode's horizon-crossing e-fold, counted \emph{before the end of
+inflation}) is fixed by construction across every run, while $N_{\rm end}=65$ is a
+tunable target common to all potentials -- this distinction matters because, as shown
+below, the physics at the pivot depends only on $N_*$, not on $N_{\rm end}$, for
+potentials with a single slow-roll attractor trajectory.
+
+\subsection{Validation: quadratic inflation}
+As in the original single-potential version of this project, $V=\tfrac12 m^2\phi^2$
+remains the principal validation case, since both its background and its spectral
+predictions have closed-form slow-roll expectations
+($\varepsilon_v=\eta_v=2/\phi^2$, $N(\phi)=\phi^2/4-1/2$). Re-targeted to the shared
+$N_{\rm end}=65$ benchmark, root-finding gives $\phi_i=16.055\,M_{pl}$ and
+$m=6.973\times10^{-6}\,M_{pl}$. Figure~\ref{fig:validation} shows the resulting pivot-mode
+curvature perturbation -- oscillating while sub-Hubble, freezing after horizon exit -- and
+the resulting scalar spectrum compared with the slow-roll power-law benchmark.
+Table~\ref{tab:main} (quadratic row) shows the numerical $(n_s,r)$ agreeing with the
+analytic slow-roll values to within $\lesssim0.5\%$ ($n_s$) and $\lesssim3\%$ ($r$),
+consistent with the expected size of slow-roll corrections at $N_*=50$.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figs/fig_validation.pdf}
+\caption{Validation case (quadratic inflation, $N_{\rm end}=65$). Left: real and
+imaginary parts of the pivot-mode curvature perturbation, oscillating sub-Hubble and
+freezing on super-Hubble scales. Right: numerical scalar power spectrum compared with the
+slow-roll power-law form.}
+\label{fig:validation}
+\end{figure}
+
+\section{Extension to Seven Further Potentials}
+The same pipeline, unmodified, was applied to seven additional potentials: quartic
+$V=\tfrac14\lambda\phi^4$; hilltop $V=V_0[1-(\phi/\mu)^2]$; Starobinsky
+$V=V_0(1-e^{-\sqrt{2/3}\,\phi})^2$; natural inflation $V=\Lambda^4(1-\cos(\phi/f))$;
+symmetry breaking $V=V_0(1-(\phi/\mu)^2)^2$; a quadratic+quartic mixture
+$V=\tfrac12\phi^2+\tfrac{g}{4}\phi^4$ (rescaled to the pivot amplitude); and the T-model
+$\alpha$-attractor $V=V_0\tanh^{2n}(\phi/\sqrt{6\alpha})$. All eight are shown together
+in Figure~\ref{fig:background} (background evolution and end-of-inflation sharpness) and
+Figure~\ref{fig:spectra} (scalar and tensor spectra), all calibrated to the shared
+benchmark. Table~\ref{tab:main} collects the numerical results for one representative
+parameter choice per potential.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figs/fig_background.pdf}
+\caption{Background field evolution (left) and the first Hubble slow-roll parameter
+aligned at the end of inflation (right), for all eight potentials at the shared
+$N_{\rm end}=65$ benchmark. Nonlinear potentials (hilltop, symmetry breaking,
+Starobinsky) show a visibly sharper $\varepsilon_1(N)\to1$ transition than the
+monomial/linear potentials.}
+\label{fig:background}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figs/fig_spectra.pdf}
+\caption{Scalar (left) and tensor (right) power spectra for all eight potentials.}
+\label{fig:spectra}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Potential & $\phi_i\,[M_{pl}]$ & $n_s$ & $r$ & $n_t$ & $-8n_t$ & diff.\ from $r$ \\
+\midrule
+Quadratic            & 16.055 & 0.9597 & 0.15823 & $-0.02040$ & 0.16321 & $-3.1\%$ \\
+Quartic               & 22.796 & 0.9393 & 0.31321 & $-0.04079$ & 0.32632 & $-4.0\%$ \\
+Hilltop ($\mu=5.5$)   & 0.0513 & 0.8703 & 0.00056 & $-0.00008$ & 0.00064 & $-12.9\%$ \\
+Starobinsky           & 5.518  & 0.9615 & 0.00426 & $-0.00055$ & 0.00443 & $-3.9\%$ \\
+Natural ($f=5$)       & 12.901 & 0.9476 & 0.04926 & $-0.00648$ & 0.05182 & $-4.9\%$ \\
+Symm.\ break.\ ($\mu=7$)& 0.0246& 0.8409 & 0.00030 & $-0.00004$ & 0.00035 & $-15.5\%$ \\
+Mix ($g=0.1$)         & 21.862 & 0.9367 & 0.32886 & $-0.04289$ & 0.34315 & $-4.2\%$ \\
+T-model ($\alpha=5$)  & 9.825  & 0.9602 & 0.02070 & $-0.00269$ & 0.02154 & $-3.9\%$ \\
+\bottomrule
+\end{tabular}
+\caption{Numerical results for all eight potentials at $N_{\rm end}=65$,
+$\mathcal{P}_\mathcal{R}(k_*)=2.05\times10^{-9}$. $n_s,n_t$ are local log-slope fits of
+the numerical spectra near $k_*$; $r$ is $\mathcal{P}_h/\mathcal{P}_\mathcal{R}$ at the
+pivot. The last column tests the single-field consistency relation $r=-8n_t$: all eight
+potentials violate it at the several-percent level expected from next-to-leading-order
+slow-roll corrections, with hilltop and symmetry breaking -- the two potentials with the
+largest $|\eta_v/\varepsilon_v|$ at the pivot -- showing the largest violation.}
+\label{tab:main}
+\end{table}
+
+A consistent pattern across the two ``hilltop-like'' potentials (hilltop and symmetry
+breaking) is that they show the sharpest $\varepsilon_1(N)$ transition near end of
+inflation (Fig.~\ref{fig:background}, right panel) and the largest deviation from the
+consistency relation at the pivot (Table~\ref{tab:main}). Both are properties of the
+same underlying feature: near $\phi=0$ these potentials are locally quadratic in $\phi^2$
+around a maximum, which makes $|\eta_v|$ large relative to $\varepsilon_v$ at horizon
+crossing, and next-to-leading-order slow-roll corrections (not captured by the
+leading-order $r=-8n_t$ relation) scale with exactly this ratio.
+
+\section{Parameter Sweeps and a Preliminary Classification}
+\label{sec:classification}
+For each potential family, a sweep over its free parameter(s) was carried out: for each
+value, $\phi_i$ is re-root-found to hold $N_{\rm end}=65$ fixed and the amplitude is
+recalibrated, isolating the effect of the parameter on $(n_s,r)$ alone. Six sweeps were
+performed: hilltop $\mu$, natural $f$, symmetry-breaking $\mu$ (all rescale $\phi$ at
+fixed potential shape); monomial power $p$ and the quadratic+quartic coupling ratio $g$
+(both change the functional form of $V$); and the T-model, swept separately over the
+curvature scale $\alpha$ and the exponent $n$.
+
+\textbf{Observed pattern.} Sweeping the scale-type parameters (hilltop $\mu$, natural
+$f$, symmetry-breaking $\mu$, T-model $\alpha$) traces out a track in the $(n_s,r)$ plane
+that is well fit by an exponential/log-linear relation between $r$ and $n_s$
+($R^2=0.9999$ for symmetry breaking and T-model $\alpha$; see
+Fig.~\ref{fig:classification}). Sweeping the monomial power $p$ instead traces an
+\emph{exactly linear} relation, consistent with the closed-form slow-roll result derived
+in the accompanying primer (Appendix, Cumulative Review Problem 2): for
+$V=\mu^{4-p}\phi^p$, $n_s-1=-(2+p)/2N_*$ and $r=4p/N_*$ exactly eliminate to a line in
+$(n_s,r)$ at fixed $N_*$. Sweeping the quadratic+quartic coupling $g$ instead, $r$ moves
+\emph{non-monotonically} with $g$ (rising, then falling slightly for $g\gtrsim0.05$), and
+the log-linear fit is markedly worse ($R^2=0.93$) -- this potential does not fall cleanly
+into either the ``rescale $\phi$'' or ``exact monomial'' bucket, since $g$ changes the
+\emph{relative weight} of two different functional terms rather than rescaling a single
+one. Finally, sweeping the T-model exponent $n$ at fixed $\alpha$ leaves both $n_s$ and
+$r$ almost unchanged ($n_s\in[0.9588,0.9596]$, $r\in[0.00475,0.00493]$ across
+$n\in[0.5,7]$) -- consistent with the known $\alpha$-attractor property that predictions
+are controlled almost entirely by $\alpha$, with only weak sensitivity to the
+tanh power $n$.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figs/fig_classification.pdf}
+\caption{$(n_s,r)$ tracks traced out by sweeping one parameter at a time within each
+potential family, all at fixed $N_{\rm end}=65$, shown as individual panels. Circle/triangle
+markers: parameters that rescale $\phi$ at fixed potential shape (``scale-type'').
+Square markers: parameters that change the functional form of $V$ (``shape-type'').
+This classification was observed directly in the numerical sweep data across all seven
+parameters shown.}
+\label{fig:classification}
+\end{figure}
+
+\textbf{Classification.} Based on this pattern, a potential's free parameters can be split
+into two kinds: (i) \emph{scale-type} parameters, which rescale $\phi$ while holding the
+shape of $V(\phi/{\rm scale})$ fixed, and which produce smooth, exponential-looking tracks
+in $(n_s,r)$; and (ii) \emph{shape-type} parameters, which change the functional form of
+$V$ itself, and which produce either an exact linear relation (when the change is a clean
+power-law deformation, as for the monomial power $p$) or non-monotonic, harder-to-fit
+behaviour (when two functional terms are traded off against each other, as for the
+mixing parameter $g$). The T-model $n$-sweep suggests a possible third category --
+parameters to which the $(n_s,r)$ prediction is largely insensitive -- though with only
+one example ($\alpha$-attractors are already known analytically to have this property)
+this is not yet confirmed as a general pattern and is a natural next thing to check.
+This classification was observed and numerically verified across all seven sweeps; the
+monomial case additionally has an accompanying analytic derivation (Sec.~3.7--B of the
+accompanying primer) that matches the numerical track exactly, which is encouraging for
+the scale/shape split more broadly, though that broader argument has not yet been derived
+analytically for the other potentials. Extending this to an analytic argument for why scale-type
+parameters generically produce a specific track shape, and confirming or refuting the
+apparent third category, are the natural next steps (Sec.~\ref{sec:limitations}).
+
+\section{Discussion}
+The central outcome of this phase of the project is a validated, potential-agnostic
+numerical pipeline that computes both scalar and tensor spectra for any single-field
+potential, together with a first systematic look at how those predictions move as a
+potential's parameters vary. Two things are on comparatively solid ground: the scalar
+sector reproduces the closed-form quadratic benchmark to sub-percent accuracy, and the
+qualitative pattern that nonlinear potentials (hilltop-type) produce sharper end-of-inflation
+transitions and larger consistency-relation violations is visible directly in the raw
+$\varepsilon_1(N)$ and $r$ vs.\ $-8n_t$ data, not inferred. The classification of
+parameters into scale- and shape-type (Sec.~\ref{sec:classification}) is a pattern that
+was directly observed and numerically verified across seven independent sweeps, one of
+which (monomial) also has an analytic underpinning that matches it exactly. It is the
+leading candidate for the project's next phase, and the natural next step is to push it
+from an observed, verified pattern to a general analytic argument.
+
+\section{Limitations and Future Development}
+\label{sec:limitations}
+\begin{itemize}
+\item \textbf{Classification framework needs an analytic argument.} The scale/shape split
+was observed and numerically verified across seven sweeps, but beyond the monomial case
+no analytic argument has yet been constructed for why scale-type parameters should
+produce an exponential-looking $(n_s,r)$ track, or for the apparent third (insensitive)
+category seen only in the T-model $n$-sweep. This is the most important open item, and
+the most promising direction for the next phase of the project.
+\item \textbf{Consistency-relation check is leading order only.} $r=-8n_t$ is a
+leading-order slow-roll relation; the observed several-percent violations are consistent
+with next-to-leading-order corrections, but this project has not computed those
+corrections independently, so the size of the violation is reported without a
+next-to-leading-order comparison to confirm it is not, instead, a numerical-tolerance
+artifact.
+\item \textbf{Arbitrary potentials are not yet systematically validated.} As before,
+quadratic inflation remains the only potential with a fully closed-form analytic
+benchmark; all others are cross-checked only against their own leading-order slow-roll
+formulas evaluated at the numerical background trajectory.
+\item \textbf{Symmetry-breaking sweep numerics.} The $\mu=5$ point in the symmetry-breaking
+sweep triggered floating-point overflow warnings during root-finding (Sec.~5); the
+tabulated result is still self-consistent (probed against $\phi_N$ boundary conditions)
+but the reliability of the $\mu\to$ small end of that track has not been separately
+stress-tested.
+\item \textbf{Only one $N_{\rm end}$ benchmark tested.} All results here use
+$N_{\rm end}=65$; since $N_*=50$ is fixed by construction, changing $N_{\rm end}$ affects
+only the trajectory between horizon crossing and the end of inflation, which is why the
+quadratic pivot values matched exactly between an earlier $N_{\rm end}=60$ pass and the
+current one -- but this has only been explicitly checked for quadratic, not for the other
+seven potentials.
+\end{itemize}
+
+\section{Research Experience}
+As with the earlier phase of this project, most of the required physics (general
+relativity, inflationary dynamics, cosmological perturbation theory) was not available
+from prior coursework and was learned specifically for this project, primarily from
+Baumann's notes, with regular mentor meetings providing direction and correction. A
+substantial part of this later phase was methodological: extending a validated
+single-potential notebook to eight potentials and six parameter sweeps required
+imposing shared conventions (a common $N_{\rm end}$, a common calibration target, a
+common tolerance) that the original single-potential version did not need, and several
+early attempts at cross-potential comparison surfaced inconsistencies (such as the
+$N_{\rm end}=60$ vs.\ $65$ mismatch between the single-potential and sweep notebooks)
+that had to be tracked down and resolved before the comparison was meaningful. Working
+through the classification hypothesis in Sec.~\ref{sec:classification} was also a
+lesson in distinguishing a genuine numerical pattern from an over-eager conclusion: an
+earlier, simpler version of the hypothesis was disproved by the non-monotonic $r(g)$
+behaviour of the quadratic+quartic mixture, which is why the classification is presented
+here explicitly as preliminary rather than as a finished result.
+
+\section{Conclusion}
+This project extended a validated single-field numerical inflation pipeline from one
+potential (quadratic, scalar-only) to eight potentials with both scalar and tensor
+perturbations, all calibrated to a shared $N_{\rm end}=65$, $\mathcal{P}_\mathcal{R}(k_*)=
+2.05\times10^{-9}$ benchmark. The scalar sector remains validated against closed-form
+quadratic slow-roll expectations to sub-percent accuracy; the tensor sector and the
+single-field consistency relation $r=-8n_t$ were checked across all eight potentials and
+show violations that track a potential's $|\eta_v/\varepsilon_v|$ at the pivot, largest
+for the hilltop-type potentials. Systematic parameter sweeps reveal a classification of
+a potential's free parameters into scale-type and shape-type, with distinct signatures in
+the $(n_s,r)$ plane, observed and numerically verified across all seven sweeps -- this is
+the leading candidate for the project's next phase, with an analytic derivation of the
+pattern as the natural next step.
+
+\begin{thebibliography}{9}
+\bibitem{baumann} D.~Baumann, \emph{Cosmology}, lecture notes. Primary theoretical
+reference throughout, particularly the sections on inflation, cosmological perturbation
+theory, and quantum initial conditions.
+\end{thebibliography}
+
+\end{document}
